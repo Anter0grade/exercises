@@ -2,6 +2,10 @@
 #include <cmath>
 
 const double g = 9.81;
+
+double degrees_to_radians(double theta){
+    return theta * M_PI / 180.0;
+}
 /*
 (v_0 * sin(theta) + sqrt( (v_0*sin(theta))^2 + 2gh)) / g
 */
@@ -12,7 +16,7 @@ double time_to_ground(double h, double v_0, double theta){
     if (v_0 < 0){return -1;}
 
     // conv to radians, sin() expects radians
-    double theta_radians = theta * M_PI / 180.0;
+    double theta_radians = degrees_to_radians(theta);
     // precompute sin(theta)
     // note: we only precompute here because it appears twice 
     double sin_theta = sin(theta_radians);
@@ -31,7 +35,7 @@ double max_height(double h, double v_0, double theta){
     if (h < 0){return -1;}
     if (v_0 < 0){return -1;}
 
-    double theta_radians = theta * M_PI / 180.0;
+    double theta_radians = degrees_to_radians(theta);
     
     double v_y = v_0 * sin(theta_radians);
     double max_h = h + (v_y * v_y) / (2 * g);
@@ -45,10 +49,11 @@ v_0 * cos(theta) * t_to_ground
 
 // how far it travels
 double horizontal_range(double h, double v_0, double theta){
+    if (h < 0){return -1;}
     if (v_0 < 0){return -1;}
 
     // conv to radians, sin() expects radians
-    double theta_radians = theta * M_PI / 180.0;
+    double theta_radians = degrees_to_radians(theta);
     
     double v_x = v_0 * cos(theta_radians);
     double range = v_x * time_to_ground(h, v_0, theta);
@@ -66,7 +71,7 @@ double final_velocity(double h, double v_0, double theta){
     if (h < 0){return -1;}
     if (v_0 < 0){return -1;}
 
-    double theta_radians = theta * M_PI / 180.0;
+    double theta_radians = degrees_to_radians(theta);
 
     double v_xf = v_0 * cos(theta_radians);
     double v_yf = (v_0 * sin(theta_radians)) - g * time_to_ground(h, v_0, theta);
@@ -92,7 +97,7 @@ coordinates position_at_time(double h, double v_0, double theta, double t){
         return {0, 0, false};
     }
 
-    double theta_radians = theta * M_PI / 180.0;
+    double theta_radians = degrees_to_radians(theta);
 
     double x = v_0 * cos(theta_radians) * t;
     double y = h + v_0 * sin(theta_radians) * t 
