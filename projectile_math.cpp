@@ -6,10 +6,10 @@ const double g = 9.81;
 double degrees_to_radians(double theta){
     return theta * M_PI / 180.0;
 }
+
 /*
 (v_0 * sin(theta) + sqrt( (v_0*sin(theta))^2 + 2gh)) / g
 */
-
 
 double time_to_ground(double h, double v_0, double theta){
     if (h < 0){return -1;}
