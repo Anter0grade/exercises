@@ -2,6 +2,11 @@
 #include <vector>
 #include <unordered_map>
 
+/*
+N = p^a * p^a ... * p^a
+(flr[a/2] + 1)(flr[a/2] + 1)...(flr[a/2] + 1)
+*/
+
 std::vector<int> factorize(int n) {
     std::vector<int> factors;
 
@@ -32,6 +37,10 @@ std::unordered_map<int, int> get_exponents(const std::vector<int>& factors) {
 int get_total_divisors(std::unordered_map<int, int>& exponents) {
     int total = 1;
 
+    /* turns the map into 2 seprate variables
+       prime = pair.first;
+       exponent = pair.second;
+    */
     for (auto [prime, exponent] : exponents) {
         total *= (exponent + 1);
     }
