@@ -5,8 +5,11 @@ import subprocess
 import time
 import socket
 from collections import Counter
+#Check when tshark stdout has data available avoids blocking read
+import selectors
+import os
 
-INTERFACE = "wlo1"
+INTERFACE = "wlo1" # change to your net interface
 THRESHOLD = 100
 INTERVAL = 2 # seconds 
 
@@ -33,29 +36,56 @@ def parse_line(line, local_ip):
 local_ip = get_local_ip()
 print("local ip:", local_ip)
 
-process = subprocess.Popen(["tshark", "-i", INTERFACE, 
-"-l", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "udp"],
-stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+process = subprocess.Popen(
+    ["tshark", "-i", INTERFACE,
+     "-l", "-T", "fields",
+     "-e", "ip.src", "-e", "ip.dst", "udp"],
+    stdout=subprocess.PIPE
+)
+
+
+selector = selectors.DefaultSelector()
+selector.register(process.stdout, selectors.EVENT_READ)
 
 buffer = []
+pending = ""
 
 try:
     while True:
-        end_time = time.time() + INTERVAL
-        while time.time() < end_time:
-            line = process.stdout.readline()
-            if line:
-                buffer.append(line)
-                if len(buffer) >= THRESHOLD:
-                    break
-    
+        end_time = time.monotonic() + INTERVAL
+
+        while time.monotonic() < end_time:
+            if len(buffer) >= THRESHOLD:
+                break
+
+            remaining = end_time - time.monotonic()
+
+            events = selector.select(timeout=remaining)
+
+            if not events:
+                break
+
+            data = os.read(process.stdout.fileno(), 4096)
+
+            if not data:
+                break
+
+            pending += data.decode("utf-8", errors="replace")
+
+            lines = pending.split("\n")
+            pending = lines.pop()
+
+            buffer.extend(line for line in lines if line)
+
         if len(buffer) >= THRESHOLD:
             remote_ips = []
+
             for line in buffer:
                 parsed = parse_line(line, local_ip)
+
                 for ip in parsed:
                     remote_ips.append(ip)
-            
+
             if remote_ips:
                 counts = Counter(remote_ips)
                 most_common_ip, count = counts.most_common(1)[0]
@@ -63,13 +93,16 @@ try:
                 print("\n====================")
                 print("Identified :\033[1m\033[92m", most_common_ip, "\033[0m")
                 print("\nPacket count in burst :\033[1m\033[91m", count, "\033[0m")
+
             else:
-                print("threshold reached but no ip's found")
+                print("Threshold reached but no IPs found")
             buffer = []
 
 except KeyboardInterrupt:
     print("\nStopped")
 
-process.terminate()
-process.wait()
-print("tshark process terminated")
+finally:
+    selector.close()
+    process.terminate()
+    process.wait()
+    print("tshark process terminated")
