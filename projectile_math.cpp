@@ -69,7 +69,7 @@ double final_velocity(double h, double v_0, double theta){
     double theta_radians = theta * M_PI / 180.0;
 
     double v_xf = v_0 * cos(theta_radians);
-    double v_yf = (v_0 * sin(theta)) - g * time_to_ground(h, v_0, theta);
+    double v_yf = (v_0 * sin(theta_radians)) - g * time_to_ground(h, v_0, theta);
     
     double v_f = sqrt((v_xf*v_xf) + (v_yf*v_yf));
 
@@ -96,7 +96,7 @@ coordinates position_at_time(double h, double v_0, double theta, double t){
 
     double x = v_0 * cos(theta_radians) * t;
     double y = h + v_0 * sin(theta_radians) * t 
-    - 0.5 * 9.81 * t * t;
+    - 0.5 * g * t * t;
 
     return {x, y, true};
 }
